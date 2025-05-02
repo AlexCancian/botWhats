@@ -8,6 +8,9 @@ import LogEnvio from "../entity/Logs";
 
 dotenv.config();
 
+const isCompiled = __filename.endsWith(".js");
+const migrationsPath = isCompiled ? "build/migration/*.js" : "src/migration/*.ts";
+
 const connectionWhats = new DataSource({
   type: "mysql",
   host: process.env.DB_HOSTNAME,
@@ -19,7 +22,7 @@ const connectionWhats = new DataSource({
   extra: { decimalNumbers: true },
   logging: false,
   entities: [Agenda, Prompt, Mensagens, LogEnvio],
-  migrations: ["src/migration/*.ts"],
+  migrations: [migrationsPath],
   subscribers: [],
 });
 
