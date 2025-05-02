@@ -4,6 +4,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
+    "start": "node build/server.js",
     "dev:server": "ts-node-dev src/server.ts",
     "typeorm": "ts-node-dev ./node_modules/typeorm/cli.js"
   },
