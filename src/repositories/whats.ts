@@ -1,30 +1,106 @@
-import { create, Whatsapp } from "venom-bot";
-import { setTimeout as wait } from "node:timers/promises";
+import makeWASocket, {
+  DisconnectReason,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore,
+  WASocket,
+} from "@whiskeysockets/baileys";
+import { Boom } from "@hapi/boom";
+import qrcode from "qrcode-terminal";
+import pino from "pino";
 
-let client: Whatsapp;
+let client: WASocket;
 
 const initWhatsApp = async () => {
-  client = await create(
-    process.env.SESSION_NAME || "session-default", // sessionName
-    undefined, // catchQR (não vamos usar)
-    undefined, // statusFind (não vamos usar)
-    {
-      headless: "new",
-      folderNameToken: "./tokens/whatsapp-bot",
-      browserArgs: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--headless=new",
-      ],
+  const sessionName = process.env.SESSION_NAME || "session";
+  const { state, saveCreds } = await useMultiFileAuthState(sessionName);
+  const { version, isLatest } = await fetchLatestBaileysVersion();
+  
+  console.log(`Usando Baileys v${version.join(".")}, isLatest: ${isLatest}`);
+
+  client = makeWASocket({
+    version,
+    logger: pino({ level: "silent" }) as any,
+    printQRInTerminal: false,
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }) as any),
+    },
+  });
+
+  client.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      console.log("Escaneie o QR Code abaixo para conectar:");
+      qrcode.generate(qr, { small: true });
     }
-  );
+
+    if (connection === "close") {
+      const shouldReconnect =
+        (lastDisconnect?.error as Boom)?.output?.statusCode !==
+        DisconnectReason.loggedOut;
+        
+      console.log(
+        "Conexão fechada devido a ",
+        (lastDisconnect?.error as Boom)?.message,
+        ", reconectando ",
+        shouldReconnect
+      );
+      
+      if (shouldReconnect) {
+        initWhatsApp();
+      } else {
+          console.log("Conexão encerrada. Delete a pasta do token e reinicie.");
+      }
+    } else if (connection === "open") {
+      console.log("✅ Conexão aberta com sucesso!");
+    }
+  });
+
+  client.ev.on("creds.update", saveCreds);
 };
 
-const enviarWhatsApp = async (numero: string, mensagem: string) => {
+const enviarWhatsApp = async (numero: string, mensagem: string): Promise<boolean> => {
   try {
-    await client.sendText(`${numero}@c.us`, mensagem);
-    console.log(`✅ Mensagem enviada para ${numero}`);
-    await wait(5000);
+    if (!client) {
+        console.error("Client WhatsApp não está inicializado.");
+        return false;
+    }
+
+    // Remove qualquer coisa que não seja dígito
+    let cleanNumber = numero.replace(/\D/g, ""); 
+
+    // Tratamento básico para adicionar DDI 55 se parecer um número BR sem DDI
+    // Números BR móveis com DDD tem 11 dígitos (11 91234 5678)
+    // Números BR fixos com DDD tem 10 dígitos (11 3123 4567)
+    if (cleanNumber.length === 10 || cleanNumber.length === 11) {
+      cleanNumber = "55" + cleanNumber;
+    }
+
+    const id = `${cleanNumber}@s.whatsapp.net`;
+    
+    // Verifica se o cliente está conectado
+    if (!client.user) { // client.user é preenchido quando a conexão conecta
+         console.warn("WhatsApp ainda conectando... aguardando 5s");
+         await new Promise(r => setTimeout(r, 5000));
+    }
+
+    // Verifica se o número existe no whats
+    console.log(`Verificando existência do número: ${id}`);
+    const results = await client.onWhatsApp(id);
+    const result = results?.[0];
+    
+    if (!result || !result.exists) { 
+        console.error(`❌ Número não registrado no WhatsApp: ${id} (Original: ${numero})`); 
+        return false; 
+    }
+
+    // Usa o JID retornado pela validação para garantir o formato correto (ex: 55119... vs 55119...:18@...)
+    const finalId = result.jid;
+
+    await client.sendMessage(finalId, { text: mensagem });
+    console.log(`✅ Mensagem (realmente) enviada para ${finalId}`);
     return true;
   } catch (error) {
     console.error(`❌ Erro ao enviar para ${numero}:`, error);
