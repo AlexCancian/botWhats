@@ -6,7 +6,7 @@ import makeWASocket, {
   WASocket,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
-import qrcode from "qrcode-terminal";
+
 import pino from "pino";
 
 let client: WASocket;
@@ -28,12 +28,30 @@ const initWhatsApp = async () => {
     },
   });
 
+  // Lógica de Pareamento via Código (Pairing Code)
+  if (!client.authState.creds.registered) {
+      const phoneNumber = process.env.WHATSAPP_PHONE_NUMBER?.replace(/\D/g, "") || "5511999999999";
+      
+      if (phoneNumber === "5511999999999") {
+          console.warn("\n⚠️ AVISO: Usando número de exemplo. Defina 'WHATSAPP_PHONE_NUMBER' no .env para o seu número real!\n");
+      }
+
+      console.log(`\nSolicitando código de pareamento para: ${phoneNumber}...`);
+      setTimeout(async () => {
+          try {
+             const code = await client.requestPairingCode(phoneNumber);
+             console.log(`\n--- CÓDIGO DE PAREAMENTO: ${code} ---\n`);
+          } catch (err) {
+             console.error("Erro ao solicitar código de pareamento:", err);
+          }
+      }, 4000);
+  }
+
   client.ev.on("connection.update", (update) => {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log("Escaneie o QR Code abaixo para conectar:");
-      qrcode.generate(qr, { small: true });
+       console.log("QR Code recebido, mas ignorado. Usando Pairing Code.");
     }
 
     if (connection === "close") {
