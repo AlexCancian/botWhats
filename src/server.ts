@@ -9,10 +9,18 @@ async function main() {
 
   console.log("Backend WhatsApp iniciado");
 
-  setInterval(async () => {
-    console.log("Buscando mensagens pendentes...");
-    await processarMensagens();
-  }, 60 * 1000);
+  const runJob = async () => {
+    try {
+      console.log("Buscando mensagens pendentes...");
+      await processarMensagens();
+    } catch (error) {
+      console.error("Erro no processamento de mensagens:", error);
+    } finally {
+      setTimeout(runJob, 60 * 1000);
+    }
+  };
+
+  runJob();
 }
 
 main();

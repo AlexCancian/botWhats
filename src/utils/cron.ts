@@ -8,7 +8,7 @@ import { enviarWhatsApp } from "../repositories/whats";
 
 export async function processarMensagens() {
   const mensagens = await buscarMensagensPendentes();
-
+  console.log(`Mensagens pendentes: ${mensagens.length}`);
   for (const mensagem of mensagens) {
     const { id, payload, tentativas } = mensagem;
 
