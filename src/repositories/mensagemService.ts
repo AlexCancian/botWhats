@@ -10,7 +10,6 @@ const mensagens = connectionWhats.getRepository(Mensagens);
 const logsEnvioMensagem = connectionWhats.getRepository(LogEnvio);
 const buscarMensagensPendentes = async (): Promise<IMensagens[]> => {
   const agora = new Date();
-  agora.setHours(agora.getHours() - 3);
   const data = await mensagens.find({
     where: {
       status: "pendente",
