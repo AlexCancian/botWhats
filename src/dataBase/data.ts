@@ -24,6 +24,7 @@ const connectionWhats = new DataSource({
   entities: [Agenda, Prompt, Mensagens, LogEnvio],
   migrations: [migrationsPath],
   subscribers: [],
+  timezone: "Z",
 });
 
 export default connectionWhats;
