@@ -6,6 +6,7 @@ import makeWASocket, {
   WASocket,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
+import { sendDisconnectEmail } from "../utils/emailService";
 
 import pino from "pino";
 
@@ -65,6 +66,9 @@ const initWhatsApp = async () => {
         ", reconectando ",
         shouldReconnect
       );
+
+      // Envia email notificando desconexão
+      sendDisconnectEmail();
       
       if (shouldReconnect) {
         initWhatsApp();
