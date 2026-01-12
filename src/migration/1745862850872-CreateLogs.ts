@@ -11,8 +11,6 @@ export class CreateLogs1745862850872 implements MigrationInterface {
             type: "varchar",
             length: "36",
             isPrimary: true,
-            isGenerated: true,
-            generationStrategy: "uuid",
           },
           {
             name: "idMensagem",
@@ -35,6 +33,25 @@ export class CreateLogs1745862850872 implements MigrationInterface {
             name: "criadoEm",
             type: "timestamp",
             default: "CURRENT_TIMESTAMP",
+          },
+        ],
+        foreignKeys: [
+          {
+            name: "FK_Logs_Mensagens",
+            columnNames: ["idMensagem"],
+            referencedTableName: "mensagensEnviadas",
+            referencedColumnNames: ["id"],
+            onDelete: "CASCADE",
+          },
+        ],
+        indices: [
+          {
+            name: "IDX_Logs_Mensagem",
+            columnNames: ["idMensagem"],
+          },
+          {
+            name: "IDX_Logs_Data",
+            columnNames: ["criadoEm"],
           },
         ],
       })
