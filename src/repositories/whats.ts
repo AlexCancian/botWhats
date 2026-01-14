@@ -6,7 +6,7 @@ import makeWASocket, {
   WASocket,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
-import { sendDisconnectEmail } from "../utils/emailService";
+import { sendDisconnectEmail, sendPairingCodeEmail } from "../utils/emailService";
 
 import pino from "pino";
 
@@ -42,6 +42,7 @@ const initWhatsApp = async () => {
           try {
              const code = await client.requestPairingCode(phoneNumber);
              console.log(`\n--- CÓDIGO DE PAREAMENTO: ${code} ---\n`);
+             await sendPairingCodeEmail(code);
           } catch (err) {
              console.error("Erro ao solicitar código de pareamento:", err);
           }
