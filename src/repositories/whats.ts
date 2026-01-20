@@ -61,20 +61,19 @@ const initWhatsApp = async () => {
         (lastDisconnect?.error as Boom)?.output?.statusCode !==
         DisconnectReason.loggedOut;
         
+      const reason = (lastDisconnect?.error as Boom)?.message || "Desconhecido";
       console.log(
         "Conexão fechada devido a ",
-        (lastDisconnect?.error as Boom)?.message,
+        reason,
         ", reconectando ",
         shouldReconnect
       );
 
-      // Envia email notificando desconexão
-      sendDisconnectEmail();
-      
       if (shouldReconnect) {
         initWhatsApp();
       } else {
           console.log("Conexão encerrada. Delete a pasta do token e reinicie.");
+          sendDisconnectEmail(reason);
       }
     } else if (connection === "open") {
       console.log("✅ Conexão aberta com sucesso!");
