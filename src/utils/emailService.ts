@@ -37,7 +37,7 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 /**
  * Envia notificação de desconexão do WhatsApp
  */
-export const sendDisconnectEmail = async () => {
+export const sendDisconnectEmail = async (reason?: string) => {
     const emailTo = process.env.EMAIL_TO;
     if (!emailTo) {
         console.error("ERRO: EMAIL_TO não definido no .env");
@@ -45,6 +45,8 @@ export const sendDisconnectEmail = async () => {
     }
 
     const subject = '⚠️ Bot WhatsApp Desconectado';
+    const reasonHtml = reason ? `<p style="margin: 5px 0 0 0;"><strong>Motivo:</strong> ${reason}</p>` : '';
+    
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; padding: 20px;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -56,6 +58,7 @@ export const sendDisconnectEmail = async () => {
                 <div style="background-color: #fff3f3; border-left: 4px solid #d32f2f; padding: 15px; margin: 20px 0;">
                     <p style="margin: 0;"><strong>Status:</strong> Desconectado</p>
                     <p style="margin: 5px 0 0 0;"><strong>Data:</strong> ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+                    ${reasonHtml}
                 </div>
                 <p>Por favor, verifique o servidor ou realize o pareamento novamente se necessário.</p>
             </div>

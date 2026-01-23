@@ -18,7 +18,6 @@ const buscarMensagensPendentes = async (): Promise<IMensagens[]> => {
       agendaPara: LessThanOrEqual(agora),
     },
   });
-  console.log(data)
   return data;
 };
 
